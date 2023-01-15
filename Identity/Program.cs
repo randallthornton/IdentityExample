@@ -1,4 +1,5 @@
 using Identity;
+using IdentityServerHost.Quickstart.UI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +12,14 @@ builder.Services
     .AddIdentityServer(opts =>
     {
         opts.Events.RaiseErrorEvents = true;
-        opts.Events.RaiseInformationEvents= true;
-        opts.Events.RaiseFailureEvents= true;
+        opts.Events.RaiseInformationEvents = true;
+        opts.Events.RaiseFailureEvents = true;
     })
     .AddDeveloperSigningCredential()
     .AddInMemoryApiScopes(Config.ApiScopes)
-    .AddInMemoryClients(Config.Clients);
+    .AddInMemoryClients(Config.Clients)
+    .AddInMemoryIdentityResources(Config.IdentityResources)
+    .AddTestUsers(TestUsers.Users);
 
 builder.Services.AddControllersWithViews();
 

@@ -1,4 +1,5 @@
-﻿using IdentityServer4.Models;
+﻿using IdentityServer4;
+using IdentityServer4.Models;
 
 namespace Identity
 {
@@ -6,7 +7,7 @@ namespace Identity
     {
         public static IEnumerable<ApiScope> ApiScopes => new List<ApiScope>
         {
-            new ApiScope("monolith", "My API")
+            new ApiScope("monolith", "My API"),
         };
 
         public static IEnumerable<Client> Clients => new List<Client>
@@ -14,16 +15,32 @@ namespace Identity
             new Client
             {
                 ClientId = "gateway",
-                AllowedGrantTypes = GrantTypes.ClientCredentials,
                 ClientSecrets =
                 {
                     new Secret("gatewaysecret".Sha256())
                 },
+                AllowedGrantTypes = GrantTypes.Code,
+                RedirectUris =
+                {
+                    "https://localhost:7190/signin-oidc"
+                },
+                PostLogoutRedirectUris = {
+                    "https://localhost:7190/signout-callback-oidc"
+                },
                 AllowedScopes =
                 {
-                    "monolith"
-                }
+                    "monolith",
+                    IdentityServerConstants.StandardScopes.OpenId,
+                    IdentityServerConstants.StandardScopes.Profile
+                },
             }
         };
+
+        public static IEnumerable<IdentityResource> IdentityResources =>
+            new List<IdentityResource>
+            {
+                new IdentityResources.OpenId(),
+                new IdentityResources.Profile(),
+            };
     }
 }

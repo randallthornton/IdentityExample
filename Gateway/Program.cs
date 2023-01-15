@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,8 +7,26 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddAuthentication()
-    .AddCookie();
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+
+builder.Services.AddAuthentication(opts =>
+{
+    opts.DefaultScheme = "Cookies";
+    opts.DefaultChallengeScheme = "oidc";
+})
+    .AddCookie("Cookies")
+    .AddOpenIdConnect("oidc", opts =>
+    {
+        opts.Authority = builder.Configuration.GetValue<string>("Identity:Authority");
+
+        opts.ClientId = "gateway";
+        opts.ClientSecret = "gatewaysecret";
+        opts.ResponseType = "code";
+
+        opts.SaveTokens = true;
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -18,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 var summaries = new[]
 {
@@ -36,6 +58,7 @@ app.MapGet("/weatherforecast", () =>
         .ToArray();
     return forecast;
 })
+.RequireAuthorization()
 .WithName("GetWeatherForecast")
 .WithOpenApi();
 
