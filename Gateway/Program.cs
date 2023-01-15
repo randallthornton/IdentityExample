@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +24,9 @@ builder.Services.AddAuthentication(opts =>
     .AddOpenIdConnect("oidc", opts =>
     {
         opts.Authority = builder.Configuration.GetValue<string>("Identity:Authority");
+        opts.Scope.Add("profile");
+        opts.Scope.Add("monolith");
+        opts.GetClaimsFromUserInfoEndpoint = true;
 
         opts.ClientId = "gateway";
         opts.ClientSecret = "gatewaysecret";
@@ -43,28 +50,28 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var summaries = new[]
+app.MapGet("/monolith/{*path}", async (string path, HttpContext context) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var url = builder.Configuration.GetValue<string>("MonolithUrl");
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var token = await context.GetTokenAsync("access_token");
+    
+    var httpClient = new HttpClient();
+
+    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+    var response = await httpClient.GetAsync($"{url}/{path}");
+
+    var json = await response.Content.ReadAsStreamAsync();
+
+    await json.CopyToAsync(context.Response.Body);
+
+    context.Response.StatusCode = response.IsSuccessStatusCode ? (int)response.StatusCode : 500;
 })
-.RequireAuthorization()
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+.RequireAuthorization();
 
-app.MapGet("/logout", async (x) => {
+app.MapGet("/logout", async (x) =>
+{
 
     await x.SignOutAsync("oidc");
     await x.SignOutAsync("Cookies");

@@ -19,7 +19,7 @@ namespace Identity
                 {
                     new Secret("gatewaysecret".Sha256())
                 },
-                AllowedGrantTypes = GrantTypes.Code,
+                AllowedGrantTypes = { GrantType.AuthorizationCode, GrantType.ClientCredentials},
                 RedirectUris =
                 {
                     "https://localhost:7190/signin-oidc"
