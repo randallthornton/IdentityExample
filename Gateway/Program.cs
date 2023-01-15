@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +63,12 @@ app.MapGet("/weatherforecast", () =>
 .RequireAuthorization()
 .WithName("GetWeatherForecast")
 .WithOpenApi();
+
+app.MapGet("/logout", async (x) => {
+
+    await x.SignOutAsync("oidc");
+    await x.SignOutAsync("Cookies");
+});
 
 app.Run();
 
