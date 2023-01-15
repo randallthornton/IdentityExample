@@ -12,12 +12,21 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
-        options.Authority = "https://localhost:7256";
+        options.Authority = builder.Configuration.GetValue<string>("Identity:Authority");
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false
         };
     });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ApiScope", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim("scope", "monolith");
+    });
+});
 
 var app = builder.Build();
 
@@ -34,6 +43,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers()
+    //Remove this is you ever want no auth endpoints
+    .RequireAuthorization("ApiScope");
 
 app.Run();
