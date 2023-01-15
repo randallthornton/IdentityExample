@@ -8,10 +8,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services
-    .AddIdentityServer()
+    .AddIdentityServer(opts =>
+    {
+        opts.Events.RaiseErrorEvents = true;
+        opts.Events.RaiseInformationEvents= true;
+        opts.Events.RaiseFailureEvents= true;
+    })
     .AddDeveloperSigningCredential()
     .AddInMemoryApiScopes(Config.ApiScopes)
     .AddInMemoryClients(Config.Clients);
+
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -25,5 +32,13 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseIdentityServer();
+
+app.UseStaticFiles();
+app.UseRouting();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapDefaultControllerRoute();
+});
+
 
 app.Run();
