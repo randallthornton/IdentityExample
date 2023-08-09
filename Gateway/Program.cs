@@ -20,7 +20,10 @@ builder.Services.AddAuthentication(opts =>
     opts.DefaultScheme = "Cookies";
     opts.DefaultChallengeScheme = "oidc";
 })
-    .AddCookie("Cookies")
+    .AddCookie("Cookies", opts =>
+    {
+
+    })
     .AddOpenIdConnect("oidc", opts =>
     {
         opts.Authority = builder.Configuration.GetValue<string>("Identity:Authority");
@@ -33,6 +36,8 @@ builder.Services.AddAuthentication(opts =>
         opts.ResponseType = "code";
 
         opts.SaveTokens = true;
+
+        opts.UseTokenLifetime = true;
     });
 
 builder.Services.AddAuthorization();
